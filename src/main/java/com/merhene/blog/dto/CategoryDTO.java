@@ -1,19 +1,13 @@
-package com.merhene.blog.model;
-
-import jakarta.persistence.*;
+package com.merhene.blog.dto;
 
 import java.util.List;
 
-@Entity
-public class Category {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class CategoryDTO {
     private Long id;
     private String name;
+    private List<ArticleDTO> articles;
 
-    @OneToMany(mappedBy = "category")
-    private List<Article> articles;
+    // Getters et setters
 
     public Long getId() {
         return id;
@@ -30,4 +24,13 @@ public class Category {
     public void setName(String name) {
         this.name = name;
     }
+
+    public List<ArticleDTO> getArticles() {
+        return articles;
+    }
+
+    public void setArticles(List<ArticleDTO> articles) {
+        this.articles = articles;
+    }
 }
+
