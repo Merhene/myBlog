@@ -3,7 +3,9 @@ package com.merhene.blog.controller;
 import com.merhene.blog.dto.ArticleDTO;
 import com.merhene.blog.model.Article;
 import com.merhene.blog.model.Category;
+import com.merhene.blog.model.Tag;
 import com.merhene.blog.repository.CategoryRepository;
+import com.merhene.blog.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,7 @@ import com.merhene.blog.repository.ArticleRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -23,6 +26,9 @@ public class ArticleController {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
 
     @GetMapping
     public ResponseEntity<List<ArticleDTO>> getAllArticles() {
@@ -140,6 +146,9 @@ public class ArticleController {
         if (article.getCategory() != null) {
             articleDTO.setCategoryId(article.getCategory().getId());
         }
+        if (article.getTags() != null) {
+            articleDTO.setTagIds(article.getTags().stream().map(Tag::getId).collect(Collectors.toList()));
+        }
         return articleDTO;
     }
 
@@ -151,7 +160,15 @@ public class ArticleController {
         article.setCreatedAt(articleDTO.getCreatedAt());
         article.setUpdatedAt(articleDTO.getUpdatedAt());
         if (articleDTO.getCategoryId() != null) {
-            Category category = categoryRepository.findById(articleDTO.getCategoryId()).orElse(null);
+            Optional<Category> optionalCategory = categoryRepository.findById(articleDTO.getCategoryId());
+            if(optionalCategory.isPresent()) {
+                Category category = optionalCategory.get();
+                article.setCategory(category);
+            }
+        }
+        if (articleDTO.getTagIds() != null) {
+            List<Tag> tags = tagRepository.findAllById(articleDTO.getTagIds());
+            article.setTags(tags);
         }
         return article;
     }
