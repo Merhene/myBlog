@@ -6,6 +6,7 @@ import com.merhene.blog.model.Category;
 import com.merhene.blog.model.Tag;
 import com.merhene.blog.repository.CategoryRepository;
 import com.merhene.blog.repository.TagRepository;
+import com.merhene.blog.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,155 +22,51 @@ import java.util.stream.Collectors;
 @RequestMapping("/articles")
 public class ArticleController {
 
-    @Autowired
-    private ArticleRepository articleRepository;
+    private final ArticleService articleService;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @Autowired
-    private TagRepository tagRepository;
+    public ArticleController(ArticleService articleService) {
+        this.articleService = articleService;
+    }
 
     @GetMapping
     public ResponseEntity<List<ArticleDTO>> getAllArticles() {
-        List<Article> articles = articleRepository.findAll();
+        List<ArticleDTO> articles = articleService.getAllArticles();
         if (articles.isEmpty()) {
-
             return ResponseEntity.noContent().build();
         }
-        List<ArticleDTO> articleDTOs = articles.stream().map(this::convertToDTO).collect(Collectors.toList());
-        return ResponseEntity.ok(articleDTOs);
+        return ResponseEntity.ok(articles);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Long id) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
+        Optional<ArticleDTO> articleDTO = articleService.getArticleById(id);
+        if (!articleDTO.isPresent()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(convertToDTO(article));
+        return ResponseEntity.ok(articleDTO.get());
     }
 
     @PostMapping
     public ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleDTO articleDTO) {
-        Article article = convertToEntity(articleDTO);
-        article.setCreatedAt(LocalDateTime.now());
-        article.setUpdatedAt(LocalDateTime.now());
-
-        if (article.getCategory() != null) {
-            Category category = categoryRepository.findById(article.getCategory().getId()).orElse(null);
-            if (category != null) {
-                return ResponseEntity.badRequest().body(null);
-            }
-            article.setCategory(category);
-        }
-        Article savedArticle = articleRepository.save(article);
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedArticle));
+        ArticleDTO savedArticleDTO = articleService.createArticle(articleDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedArticleDTO);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Long id, @RequestBody ArticleDTO articleDTO) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
+        Optional<ArticleDTO> updatedArticleDTO = articleService.updateArticle(id, articleDTO);
+        if (!updatedArticleDTO.isPresent()) {
             return ResponseEntity.notFound().build();
-        } else {
-            article.setTitle(articleDTO.getTitle());
-            article.setContent(articleDTO.getContent());
-            article.setUpdatedAt(LocalDateTime.now());
-
-            if (articleDTO.getCategoryId() != null) {
-                Category category = categoryRepository.findById(articleDTO.getCategoryId()).orElse(null);
-                if (category == null) {
-                    return ResponseEntity.badRequest().body(null);
-                }
-                article.setCategory(category);
-            }
-
-            Article updatedArticle = articleRepository.save(article);
-            return ResponseEntity.ok(convertToDTO(updatedArticle));
         }
+        return ResponseEntity.ok(updatedArticleDTO.get());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteArticle(@PathVariable Long id) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
+        if (articleService.deleteArticle(id)) {
+            return ResponseEntity.noContent().build();
+        } else {
             return ResponseEntity.notFound().build();
         }
-        articleRepository.delete(article);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/title/{title}")
-    public ResponseEntity<List<Article>> getArticlesByTitle(@PathVariable String title) {
-        List<Article> articles = articleRepository.findByTitle(title);
-        if (articles.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(articles);
-    }
-
-    @GetMapping("content/{content}")
-    public ResponseEntity<List<Article>> getArticlesByContent(@PathVariable String content) {
-        List<Article> articles = articleRepository.findByContentContaining(content);
-        if (articles.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(articles);
-    }
-
-    @GetMapping("/created-after/{date}")
-    public ResponseEntity<List<Article>> getArticlesByCreatedAfter(@PathVariable LocalDateTime date) {
-        List<Article> articles = articleRepository.findByCreatedAtAfter(date);
-        if (articles.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(articles);
-    }
-
-    @GetMapping("/latest")
-    public ResponseEntity<List<Article>> getLatestArticles() {
-        List<Article> articles = articleRepository.findLastsByCreatedAtDesc();
-        if (articles.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(articles);
-    }
-
-    private ArticleDTO convertToDTO(Article article) {
-        ArticleDTO articleDTO = new ArticleDTO();
-        articleDTO.setId(article.getId());
-        articleDTO.setTitle(article.getTitle());
-        articleDTO.setContent(article.getContent());
-        articleDTO.setCreatedAt(article.getCreatedAt());
-        articleDTO.setUpdatedAt(article.getUpdatedAt());
-        if (article.getCategory() != null) {
-            articleDTO.setCategoryId(article.getCategory().getId());
-        }
-        if (article.getTags() != null) {
-            articleDTO.setTagIds(article.getTags().stream().map(Tag::getId).collect(Collectors.toList()));
-        }
-        return articleDTO;
-    }
-
-    private Article convertToEntity(ArticleDTO articleDTO) {
-        Article article = new Article();
-        article.setId(articleDTO.getId());
-        article.setTitle(articleDTO.getTitle());
-        article.setContent(articleDTO.getContent());
-        article.setCreatedAt(articleDTO.getCreatedAt());
-        article.setUpdatedAt(articleDTO.getUpdatedAt());
-        if (articleDTO.getCategoryId() != null) {
-            Optional<Category> optionalCategory = categoryRepository.findById(articleDTO.getCategoryId());
-            if(optionalCategory.isPresent()) {
-                Category category = optionalCategory.get();
-                article.setCategory(category);
-            }
-        }
-        if (articleDTO.getTagIds() != null) {
-            List<Tag> tags = tagRepository.findAllById(articleDTO.getTagIds());
-            article.setTags(tags);
-        }
-        return article;
     }
 }
