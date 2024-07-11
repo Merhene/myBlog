@@ -19,6 +19,10 @@ public class Article {
     @JoinColumn(name = "category_id")
     private Category category;
 
+
+    @OneToMany(mappedBy = "article")
+    private List<ArticleAuthor> articleAuthors;
+
     @ManyToMany
     @JoinTable(
             name = "article_tag",
