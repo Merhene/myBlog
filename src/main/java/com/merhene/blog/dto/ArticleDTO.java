@@ -11,6 +11,7 @@ public class ArticleDTO {
     private LocalDateTime updatedAt;
     private Long categoryId;
     private List<Long> tagIds;
+    private List<ArticleAuthorDTO> authors;
 
     public Long getId() {
         return id;
