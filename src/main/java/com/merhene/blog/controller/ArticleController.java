@@ -1,22 +1,14 @@
 package com.merhene.blog.controller;
 
 import com.merhene.blog.dto.ArticleDTO;
-import com.merhene.blog.model.Article;
-import com.merhene.blog.model.Category;
-import com.merhene.blog.model.Tag;
-import com.merhene.blog.repository.CategoryRepository;
-import com.merhene.blog.repository.TagRepository;
+import com.merhene.blog.exception.ResourceNotFoundException;
 import com.merhene.blog.service.ArticleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.merhene.blog.repository.ArticleRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/articles")
@@ -37,13 +29,11 @@ public class ArticleController {
         return ResponseEntity.ok(articles);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/Articles/{id}")
     public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Long id) {
-        Optional<ArticleDTO> articleDTO = articleService.getArticleById(id);
-        if (!articleDTO.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(articleDTO.get());
+        ArticleDTO articleDTO = articleService.getArticleById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Article with id : " + id + "isn't found"));
+        return ResponseEntity.ok(articleDTO);
     }
 
     @PostMapping
