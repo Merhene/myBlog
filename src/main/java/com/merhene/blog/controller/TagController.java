@@ -1,100 +1,57 @@
 package com.merhene.blog.controller;
 
+import com.merhene.blog.service.TagService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.merhene.blog.dto.TagDTO;
-import com.merhene.blog.model.Tag;
-import com.merhene.blog.model.Article;
-import com.merhene.blog.repository.TagRepository;
-import com.merhene.blog.repository.ArticleRepository;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/tags")
 public class TagController {
 
-    private final TagRepository tagRepository;
-    private final ArticleRepository articleRepository;
-
-    public TagController(TagRepository tagRepository, ArticleRepository articleRepository) {
-        this.tagRepository = tagRepository;
-        this.articleRepository = articleRepository;
-    }
+    @Autowired
+    private TagService tagService;
 
     @GetMapping
     public ResponseEntity<List<TagDTO>> getAllTags() {
-        List<Tag> tags = tagRepository.findAll();
-        if (tags.isEmpty()) {
+        List<TagDTO> tagDTOs = tagService.getAllTags();
+        if (tagDTOs.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        List<TagDTO> tagDTOs = tags.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
         return ResponseEntity.ok(tagDTOs);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TagDTO> getTagById(@PathVariable Long id) {
-        Optional<Tag> optionalTag = tagRepository.findById(id);
-        if (!optionalTag.isPresent()) {
+        TagDTO tagDTO = tagService.getTagById(id);
+        if (tagDTO == null) {
             return ResponseEntity.notFound().build();
         }
-
-        Tag tag = optionalTag.get();
-        return ResponseEntity.ok(convertToDTO(tag));
+        return ResponseEntity.ok(tagDTO);
     }
 
     @PostMapping
     public ResponseEntity<TagDTO> createTag(@RequestBody TagDTO tagDTO) {
-        Tag tag = convertToEntity(tagDTO);
-        Tag savedTag = tagRepository.save(tag);
-        return ResponseEntity.status(201).body(convertToDTO(savedTag));
+        TagDTO createdTagDTO = tagService.createTag(tagDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTagDTO);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TagDTO> updateTag(@PathVariable Long id, @RequestBody TagDTO tagDTO) {
-        Optional<Tag> optionalTag = tagRepository.findById(id);
-        if (!optionalTag.isPresent()) {
+        TagDTO updatedTagDTO = tagService.updateTag(id, tagDTO);
+        if (updatedTagDTO == null) {
             return ResponseEntity.notFound().build();
         }
-        Tag tag = optionalTag.get();
-        tag.setName(tagDTO.getName());
-        Tag updatedTag = tagRepository.save(tag);
-        return ResponseEntity.ok(convertToDTO(updatedTag));
+        return ResponseEntity.ok(updatedTagDTO);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTag(@PathVariable Long id) {
-        Optional<Tag> optionalTag = tagRepository.findById(id);
-        if (!optionalTag.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        Tag tag = optionalTag.get();
-        tagRepository.delete(tag);
+        tagService.deleteTag(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private TagDTO convertToDTO(Tag tag) {
-        TagDTO tagDTO = new TagDTO();
-        tagDTO.setId(tag.getId());
-        tagDTO.setName(tag.getName());
-        if (tag.getArticles() != null) {
-            tagDTO.setArticleIds(tag.getArticles().stream().map(Article::getId).collect(Collectors.toList()));
-        }
-        return tagDTO;
-    }
-
-    private Tag convertToEntity(TagDTO tagDTO) {
-        Tag tag = new Tag();
-        tag.setId(tagDTO.getId());
-        tag.setName(tagDTO.getName());
-        if (tagDTO.getArticleIds() != null) {
-            List<Article> articles = articleRepository.findAllById(tagDTO.getArticleIds());
-            tag.setArticles(articles);
-        }
-        return tag;
     }
 }
