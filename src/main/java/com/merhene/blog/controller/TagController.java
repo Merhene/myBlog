@@ -1,6 +1,7 @@
 package com.merhene.blog.controller;
 
 import com.merhene.blog.service.TagService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,13 +36,13 @@ public class TagController {
     }
 
     @PostMapping
-    public ResponseEntity<TagDTO> createTag(@RequestBody TagDTO tagDTO) {
+    public ResponseEntity<TagDTO> createTag(@Valid @RequestBody TagDTO tagDTO) {
         TagDTO createdTagDTO = tagService.createTag(tagDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTagDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TagDTO> updateTag(@PathVariable Long id, @RequestBody TagDTO tagDTO) {
+    public ResponseEntity<TagDTO> updateTag(@PathVariable Long id, @Valid @RequestBody TagDTO tagDTO) {
         TagDTO updatedTagDTO = tagService.updateTag(id, tagDTO);
         if (updatedTagDTO == null) {
             return ResponseEntity.notFound().build();
