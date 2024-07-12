@@ -1,10 +1,19 @@
 package com.merhene.blog.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.util.List;
 
 public class CategoryDTO {
+    @NotNull(message = "ID cannot be null")
+    @Positive(message = "ID has to be positive number")
     private Long id;
+
+    @NotBlank(message = "Name cannot be empty")
     private String name;
+
     private List<ArticleDTO> articles;
 
     // Getters et setters

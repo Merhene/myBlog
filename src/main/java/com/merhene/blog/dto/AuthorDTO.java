@@ -1,11 +1,22 @@
 package com.merhene.blog.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.util.List;
 
 public class AuthorDTO {
+    @NotNull(message = "ID cannot be null")
+    @Positive(message = "ID has to be positive number")
     private Long id;
+
+    @NotBlank(message = "Firstname cannot be empty")
     private String firstname;
+
+    @NotBlank(message = "Lastname cannot be empty")
     private String lastname;
+
     private List<ArticleAuthorDTO> articleAuthors;
 
     public Long getId() {
